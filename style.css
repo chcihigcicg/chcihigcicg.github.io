@@ -1,0 +1,745 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e1e2e 0%, #2d3748 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #e2e8f0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #1a202c;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    padding: 30px;
+    border: 1px solid #2d3748;
+}
+
+h1 {
+    text-align: center;
+    color: #f7fafc;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.upload-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#videoInput {
+    display: none;
+}
+
+.upload-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: 1px solid #667eea;
+}
+
+.upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.editor-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.video-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#sourceVideo {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    background: #2d3748;
+}
+
+.canvas-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#editCanvas {
+    border: 2px solid #4a5568;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    background: #000;
+    cursor: default;
+}
+
+#editCanvas.crop-mode {
+    cursor: move;
+}
+
+.circle-mask {
+    position: absolute;
+    width: 512px;
+    height: 512px;
+    border: none; /* Убираем красную обводку */
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.circle-mask.active {
+    opacity: 0; /* Полностью скрываем, так как теперь используем canvas */
+}
+
+/* Индикатор масштаба */
+.scale-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #f7fafc;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.scale-indicator.visible {
+    opacity: 1;
+}
+
+.controls {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: #2d3748;
+    border-radius: 8px;
+    border: 1px solid #4a5568;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.control-group label {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 14px;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    background: #4a5568;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    border: 2px solid #2d3748;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    accent-color: #667eea;
+}
+
+.export-btn {
+    grid-column: 1 / -1;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+}
+
+.export-btn:disabled {
+    background: #4a5568;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.progress-section {
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #4a5568;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#progressText {
+    color: #a0aec0;
+    font-size: 16px;
+    line-height: 1.4;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Упрощённый таймлайн */
+.timeline-container {
+    background: #2d3748;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #4a5568;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #a0aec0;
+}
+
+.timeline-track {
+    position: relative;
+    height: 50px;
+    background: #4a5568;
+    border-radius: 25px;
+    margin: 15px 0;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.timeline-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #4a5568 0%, #667eea 50%, #4a5568 100%);
+    opacity: 0.3;
+}
+
+.timeline-segment {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0; /* Убираем закругления */
+    width: 25%;
+    transition: left 0.1s ease;
+    cursor: grab;
+    border-left: 3px solid #f7fafc;
+    border-right: 3px solid #f7fafc;
+}
+
+.timeline-segment:active {
+    cursor: grabbing;
+}
+
+.timeline-cursor {
+    position: absolute;
+    top: -5px;
+    width: 4px;
+    height: 60px;
+    background: #f56565;
+    border-radius: 2px;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(245, 101, 101, 0.5);
+}
+
+/* Отметки времени */
+.timeline-marks {
+    position: relative;
+    height: 25px;
+    margin-top: 5px;
+    font-size: 11px;
+    color: #a0aec0;
+    font-family: 'Courier New', monospace;
+}
+
+.timeline-mark {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+.timeline-mark::before {
+    content: '';
+    width: 1px;
+    height: 8px;
+    background: #4a5568;
+    position: absolute;
+    top: -13px;
+}
+
+.timeline-mark.major::before {
+    height: 12px;
+    background: #667eea;
+    top: -17px;
+    width: 2px;
+}
+
+/* Контролы таймлайна */
+.timeline-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.control-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.control-btn:disabled {
+    background: #4a5568;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+#currentTime {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #e2e8f0;
+    min-width: 50px;
+    text-align: center;
+    background: #4a5568;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+/* Убираем все ручки кадрирования */
+.crop-handle {
+    display: none;
+}
+
+/* Упрощённое кадрирование */
+.crop-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 512px;
+    height: 512px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.crop-controls.active {
+    opacity: 1;
+    pointer-events: none; /* Убираем pointer-events отсюда */
+}
+
+.crop-overlay {
+    display: none; /* Полностью убираем overlay */
+}
+
+/* Canvas должен обрабатывать события напрямую */
+#editCanvas {
+    border: 2px solid #4a5568;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    background: #000;
+    cursor: default;
+}
+
+#editCanvas.crop-mode {
+    cursor: move;
+}
+
+@media (max-width: 768px) {
+    /* Улучшенная адаптация для мобильных устройств */
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 15px;
+        border-radius: 10px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+    
+    .upload-section {
+        margin-bottom: 20px;
+    }
+    
+    .upload-btn {
+        padding: 12px 24px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .editor-section {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .video-container {
+        gap: 10px;
+    }
+    
+    #sourceVideo {
+        max-height: 250px;
+        width: 100%;
+    }
+    
+    /* Адаптивный canvas */
+    .canvas-container {
+        width: 100%;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+    
+    #editCanvas {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        aspect-ratio: 1;
+    }
+    
+    /* Увеличиваем индикатор масштаба для touch */
+    .scale-indicator {
+        font-size: 14px;
+        padding: 8px 12px;
+        top: 15px;
+        right: 15px;
+    }
+    
+    /* Адаптивный таймлайн */
+    .timeline-container {
+        padding: 10px;
+    }
+    
+    .timeline-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: 12px;
+        text-align: center;
+    }
+    
+    .timeline-header span:first-child {
+        align-self: center;
+    }
+    
+    .timeline-track {
+        height: 60px; /* Увеличиваем для удобства touch */
+        margin: 20px 0;
+    }
+    
+    .timeline-segment {
+        height: 100%;
+        border-left: 4px solid #f7fafc;
+        border-right: 4px solid #f7fafc;
+    }
+    
+    .timeline-cursor {
+        width: 6px;
+        height: 70px;
+        top: -5px;
+    }
+    
+    .timeline-marks {
+        height: 30px;
+        font-size: 10px;
+    }
+    
+    .timeline-mark::before {
+        top: -25px;
+        height: 10px;
+    }
+    
+    .timeline-mark.major::before {
+        top: -30px;
+        height: 15px;
+        width: 3px;
+    }
+    
+    .timeline-controls {
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .control-btn {
+        padding: 12px 20px;
+        font-size: 18px;
+        min-width: 60px;
+        min-height: 48px; /* Минимальный размер для touch */
+    }
+    
+    #currentTime {
+        font-size: 18px;
+        min-width: 60px;
+        text-align: center;
+    }
+    
+    /* Адаптивные контролы */
+    .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .control-group {
+        gap: 8px;
+    }
+    
+    .control-group label {
+        font-size: 16px;
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        min-height: 48px; /* Удобный размер для touch */
+    }
+    
+    input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    
+    .export-btn {
+        padding: 16px 24px;
+        font-size: 16px;
+        min-height: 56px;
+        border-radius: 12px;
+    }
+    
+    /* Прогресс бар */
+    .progress-section {
+        margin-top: 20px;
+    }
+    
+    .progress-bar {
+        height: 16px;
+        margin-bottom: 20px;
+    }
+    
+    #progressText {
+        font-size: 14px;
+    }
+}
+
+/* Дополнительная адаптация для очень маленьких экранов */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    h1 {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+    }
+    
+    .editor-section {
+        gap: 15px;
+    }
+    
+    #editCanvas {
+        max-width: 100%;
+        width: calc(100vw - 40px);
+        height: calc(100vw - 40px);
+    }
+    
+    .timeline-header {
+        font-size: 11px;
+    }
+    
+    .timeline-track {
+        height: 50px;
+        margin: 15px 0;
+    }
+    
+    .timeline-cursor {
+        height: 60px;
+    }
+    
+    .timeline-controls {
+        gap: 15px;
+    }
+    
+    .control-btn {
+        padding: 10px 16px;
+        font-size: 16px;
+        min-width: 50px;
+    }
+    
+    #currentTime {
+        font-size: 16px;
+    }
+    
+    .controls {
+        padding: 12px;
+        gap: 12px;
+    }
+    
+    .export-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+}
+
+/* Ландшафтная ориентация на мобильных */
+@media (max-width: 768px) and (orientation: landscape) {
+    .editor-section {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    
+    .video-container {
+        order: 1;
+    }
+    
+    .canvas-container {
+        order: 2;
+    }
+    
+    .controls {
+        order: 3;
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .export-btn {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Улучшения для touch устройств */
+@media (hover: none) and (pointer: coarse) {
+    /* Увеличиваем все интерактивные элементы */
+    .upload-btn {
+        min-height: 48px;
+    }
+    
+    .control-btn {
+        min-height: 48px;
+        min-width: 48px;
+    }
+    
+    .timeline-track {
+        min-height: 48px;
+    }
+    
+    input[type="checkbox"] {
+        min-width: 24px;
+        min-height: 24px;
+    }
+    
+    /* Убираем hover эффекты на touch устройствах */
+    .upload-btn:hover,
+    .export-btn:hover,
+    .control-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* Добавляем активные состояния для touch */
+    .upload-btn:active,
+    .export-btn:active,
+    .control-btn:active {
+        transform: scale(0.98);
+        opacity: 0.8;
+    }
+    
+    .timeline-segment:active {
+        opacity: 0.8;
+    }
+}

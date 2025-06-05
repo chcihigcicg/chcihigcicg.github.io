@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a202c">
+    <title>AntiFon Video Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AntiFon Video Editor</h1>
+        
+        <div class="upload-section">
+            <input type="file" id="videoInput" accept="video/*">
+            <label for="videoInput" class="upload-btn">Выберите видео</label>
+        </div>
+
+        <div class="editor-section" id="editorSection" style="display: none;">
+            <div class="video-container">
+                <video id="sourceVideo" controls muted></video>
+                
+                <!-- Упрощённый таймлайн -->
+                <div class="timeline-container">
+                    <div class="timeline-header">
+                        <span>Перетащите сегмент для выбора фрагмента (3 сек)</span>
+                        <span id="timeInfo">0:00 - 3:00</span>
+                    </div>
+                    <div class="timeline-track" id="timelineTrack">
+                        <div class="timeline-background"></div>
+                        <div class="timeline-segment" id="timelineSegment"></div>
+                        <div class="timeline-cursor" id="timelineCursor"></div>
+                    </div>
+                    <div class="timeline-marks" id="timelineMarks">
+                        <!-- Отметки времени будут генерироваться в JS -->
+                    </div>
+                    <div class="timeline-controls">
+                        <button id="playBtn" class="control-btn">▶</button>
+                        <button id="resetBtn" class="control-btn">⟲</button>
+                        <span id="currentTime">0:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="editCanvas" width="512" height="512"></canvas>
+                
+                <!-- Упрощённое кадрирование -->
+                <div class="crop-controls" id="cropControls">
+                    <div class="crop-overlay" id="cropOverlay"></div>
+                </div>
+                
+                <!-- Индикатор масштаба -->
+                <div class="scale-indicator" id="scaleIndicator">100%</div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="circleMaskToggle">
+                        Круглая маска (для стикеров Telegram)
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="cropModeToggle">
+                        Режим кадрирования
+                    </label>
+                </div>
+                
+                <button id="exportBtn" class="export-btn">Скачать видео</button>
+            </div>
+        </div>
+        
+        <div class="progress-section" id="progressSection" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Обработка видео...</p>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
