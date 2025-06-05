@@ -74,12 +74,20 @@ class VideoEditor {
         
         if (this.exportBtn) this.exportBtn.addEventListener('click', () => this.exportVideo());
         
-        // Упрощённый таймлайн
+        // Упрощённый таймлайн с поддержкой touch
         if (this.timelineSegment) {
+            // Mouse события
             this.timelineSegment.addEventListener('mousedown', (e) => this.onSegmentMouseDown(e));
+            // Touch события
+            this.timelineSegment.addEventListener('touchstart', (e) => this.onSegmentTouchStart(e), { passive: false });
+            this.timelineSegment.addEventListener('touchmove', (e) => this.onSegmentTouchMove(e), { passive: false });
+            this.timelineSegment.addEventListener('touchend', (e) => this.onSegmentTouchEnd(e), { passive: false });
         }
         if (this.timelineTrack) {
+            // Mouse события
             this.timelineTrack.addEventListener('click', (e) => this.onTimelineClick(e));
+            // Touch события
+            this.timelineTrack.addEventListener('touchstart', (e) => this.onTimelineTouchStart(e), { passive: false });
         }
         
         if (this.playBtn) this.playBtn.addEventListener('click', () => this.togglePlayback());
@@ -103,6 +111,9 @@ class VideoEditor {
         // Глобальные события для завершения перетаскивания
         document.addEventListener('mousemove', (e) => this.onGlobalMouseMove(e));
         document.addEventListener('mouseup', () => this.onGlobalMouseUp());
+        // Глобальные touch события
+        document.addEventListener('touchmove', (e) => this.onGlobalTouchMove(e), { passive: false });
+        document.addEventListener('touchend', () => this.onGlobalTouchEnd());
     }
 
     handleVideoUpload(event) {
@@ -132,17 +143,38 @@ class VideoEditor {
         const totalSeconds = Math.ceil(this.videoDuration);
         const step = this.videoDuration > 30 ? 5 : 1; // Если видео длинное, показываем каждые 5 секунд
         
+        const marks = [];
         for (let i = 0; i <= totalSeconds; i += step) {
             if (i > this.videoDuration) break;
-            
-            const mark = document.createElement('div');
-            mark.className = `timeline-mark ${i % (step * 5) === 0 ? 'major' : ''}`;
-            mark.textContent = i + 's';
-            mark.style.position = 'absolute';
-            mark.style.left = `${(i / this.videoDuration) * 100}%`;
-            mark.style.transform = 'translateX(-50%)';
-            this.timelineMarks.appendChild(mark);
+            marks.push(i);
         }
+        
+        // Убеждаемся что последняя отметка соответствует концу видео
+        if (marks[marks.length - 1] !== Math.floor(this.videoDuration)) {
+            marks.push(Math.floor(this.videoDuration));
+        }
+        
+        marks.forEach((seconds, index) => {
+            const mark = document.createElement('div');
+            mark.className = `timeline-mark ${seconds % (step * 5) === 0 ? 'major' : ''}`;
+            mark.textContent = seconds + 's';
+            mark.style.position = 'absolute';
+            mark.style.left = `${(seconds / this.videoDuration) * 100}%`;
+            
+            // Особое выравнивание для первой и последней отметки
+            if (index === 0) {
+                // Первая отметка - выравнивание по левому краю
+                mark.style.transform = 'translateX(0%)';
+            } else if (index === marks.length - 1) {
+                // Последняя отметка - выравнивание по правому краю
+                mark.style.transform = 'translateX(-100%)';
+            } else {
+                // Средние отметки - центрирование
+                mark.style.transform = 'translateX(-50%)';
+            }
+            
+            this.timelineMarks.appendChild(mark);
+        });
     }
 
     // Упрощённые методы таймлайна
@@ -164,6 +196,83 @@ class VideoEditor {
         
         this.sourceVideo.currentTime = time;
         this.updateTimelineDisplay();
+    }
+
+    // Touch события для сегмента таймлайна
+    onSegmentTouchStart(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.touches.length === 1) {
+            this.isDraggingSegment = true;
+            const rect = this.timelineTrack.getBoundingClientRect();
+            const touch = e.touches[0];
+            this.segmentDragStart = touch.clientX - rect.left - (this.startTime / this.videoDuration) * rect.width;
+            
+            // Визуальная обратная связь
+            this.timelineSegment.style.opacity = '0.8';
+        }
+    }
+
+    onSegmentTouchMove(e) {
+        if (!this.isDraggingSegment) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.touches.length === 1) {
+            const rect = this.timelineTrack.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left - this.segmentDragStart;
+            const percentage = Math.max(0, Math.min(1, x / rect.width));
+            
+            this.startTime = percentage * this.videoDuration;
+            this.endTime = Math.min(this.videoDuration, this.startTime + 3);
+            
+            // Если достигли конца видео, сдвигаем начало
+            if (this.endTime >= this.videoDuration) {
+                this.endTime = this.videoDuration;
+                this.startTime = Math.max(0, this.endTime - 3);
+            }
+            
+            // Обновляем позицию видео в реальном времени при перетаскивании
+            this.sourceVideo.currentTime = this.startTime;
+            this.updateTimelineDisplay();
+        }
+    }
+
+    onSegmentTouchEnd(e) {
+        e.preventDefault();
+        this.isDraggingSegment = false;
+        
+        // Восстанавливаем визуальное состояние
+        this.timelineSegment.style.opacity = '1';
+        
+        // Убеждаемся что видео показывает начало нового фрагмента
+        this.sourceVideo.currentTime = this.startTime;
+        // Небольшая задержка для обновления кадра
+        setTimeout(() => {
+            this.updateCanvas();
+        }, 50);
+    }
+
+    // Touch события для трека таймлайна
+    onTimelineTouchStart(e) {
+        // Проверяем, что касание не на сегменте
+        if (e.target === this.timelineSegment) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.touches.length === 1) {
+            const rect = this.timelineTrack.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const percentage = x / rect.width;
+            const time = percentage * this.videoDuration;
+            
+            this.sourceVideo.currentTime = time;
+            this.updateTimelineDisplay();
+        }
     }
 
     // Исправленные методы кадрирования для canvas
@@ -292,6 +401,8 @@ class VideoEditor {
                 this.startTime = Math.max(0, this.endTime - 3);
             }
             
+            // Обновляем позицию видео в реальном времени при перетаскивании
+            this.sourceVideo.currentTime = this.startTime;
             this.updateTimelineDisplay();
             return;
         }
@@ -313,6 +424,61 @@ class VideoEditor {
         this.isDraggingSegment = false;
         this.isDragging = false;
         this.lastTouch = null;
+        
+        // Обновляем видео на новое начало фрагмента
+        if (this.sourceVideo) {
+            this.sourceVideo.currentTime = this.startTime;
+            setTimeout(() => {
+                this.updateCanvas();
+            }, 100);
+        }
+    }
+
+    // Глобальные touch события
+    onGlobalTouchMove(e) {
+        if (this.isDraggingSegment) {
+            this.onSegmentTouchMove(e);
+            return;
+        }
+        
+        // Перемещение в режиме кадрирования
+        if (this.isDragging && this.isCropMode && e.touches.length === 1) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - this.dragStart.x;
+            const deltaY = touch.clientY - this.dragStart.y;
+            
+            const sensitivity = window.innerWidth < 768 ? 1.2 : 1;
+            this.offsetX += deltaX * sensitivity;
+            this.offsetY += deltaY * sensitivity;
+            
+            this.dragStart = { 
+                x: touch.clientX, 
+                y: touch.clientY 
+            };
+            
+            this.updateCanvas();
+        }
+    }
+
+    onGlobalTouchEnd() {
+        this.isDraggingSegment = false;
+        this.isDragging = false;
+        this.lastTouch = null;
+        
+        // Восстанавливаем визуальное состояние сегмента
+        if (this.timelineSegment) {
+            this.timelineSegment.style.opacity = '1';
+        }
+        
+        // ВАЖНО: Обновляем видео на новое начало фрагмента
+        if (this.sourceVideo) {
+            this.sourceVideo.currentTime = this.startTime;
+            // Принудительно обновляем canvas для отображения нового кадра
+            setTimeout(() => {
+                this.updateCanvas();
+            }, 100);
+        }
     }
 
     updateTimelineDisplay() {

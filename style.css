@@ -281,62 +281,161 @@ input[type="checkbox"] {
     top: 0;
     height: 100%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 0; /* Убираем закругления */
+    border-radius: 0;
     width: 25%;
-    transition: left 0.1s ease;
+    transition: left 0.1s ease, opacity 0.2s ease;
     cursor: grab;
     border-left: 3px solid #f7fafc;
     border-right: 3px solid #f7fafc;
+    min-width: 60px;
+    touch-action: none;
+    user-select: none;
 }
 
 .timeline-segment:active {
     cursor: grabbing;
+    opacity: 0.8;
 }
 
 .timeline-cursor {
     position: absolute;
     top: -5px;
-    width: 4px;
     height: 60px;
-    background: #f56565;
+    width: 4px;
+    background: #f7fafc;
     border-radius: 2px;
     pointer-events: none;
-    box-shadow: 0 0 10px rgba(245, 101, 101, 0.5);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 10;
 }
 
-/* Отметки времени */
+/* Исправленные отметки времени */
 .timeline-marks {
     position: relative;
     height: 25px;
     margin-top: 5px;
     font-size: 11px;
     color: #a0aec0;
-    font-family: 'Courier New', monospace;
 }
 
 .timeline-mark {
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    font-size: 11px;
+    color: #a0aec0;
     white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
 }
 
+/* Выравнивание первой и последней отметки */
+.timeline-mark:first-child {
+    transform: translateX(0%) !important; /* Начало - без сдвига */
+}
+
+.timeline-mark:last-child {
+    transform: translateX(-100%) !important; /* Конец - полный сдвиг влево */
+}
+
+/* Вертикальные линии для отметок */
 .timeline-mark::before {
     content: '';
-    width: 1px;
-    height: 8px;
-    background: #4a5568;
     position: absolute;
-    top: -13px;
+    top: -20px;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    background: #667eea;
+    transform: translateX(-50%);
 }
 
 .timeline-mark.major::before {
-    height: 12px;
-    background: #667eea;
-    top: -17px;
-    width: 2px;
+    top: -25px;
+    height: 15px;
+    width: 3px;
+    background: #f7fafc;
+}
+
+/* Дополнительные стили для touch устройств */
+@media (hover: none) and (pointer: coarse) {
+    .timeline-track {
+        min-height: 60px; /* Увеличиваем высоту для touch */
+        padding: 5px 0; /* Дополнительная область касания */
+    }
+    
+    .timeline-segment {
+        min-height: 50px;
+        min-width: 80px; /* Еще больше для touch */
+        border-left: 4px solid #f7fafc;
+        border-right: 4px solid #f7fafc;
+        /* Добавляем псевдоэлементы для увеличения области касания */
+        position: relative;
+    }
+    
+    .timeline-segment::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        /* Невидимая расширенная область касания */
+    }
+    
+    .timeline-cursor {
+        width: 6px;
+        height: 70px;
+        top: -5px;
+    }
+    
+    /* Убираем hover эффекты на touch устройствах */
+    .timeline-segment:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* Добавляем активные состояния для touch */
+    .timeline-segment:active {
+        transform: scale(1.02);
+        opacity: 0.8;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+}
+
+/* Особые настройки для очень маленьких экранов */
+@media (max-width: 480px) {
+    .timeline-track {
+        height: 70px; /* Еще больше для маленьких экранов */
+        margin: 20px 0;
+    }
+    
+    .timeline-segment {
+        min-width: 100px; /* Максимальная ширина для удобства */
+        height: 60px;
+        border-left: 5px solid #f7fafc;
+        border-right: 5px solid #f7fafc;
+    }
+    
+    .timeline-cursor {
+        width: 8px;
+        height: 80px;
+        top: -5px;
+    }
+    
+    .timeline-marks {
+        height: 35px;
+        font-size: 12px;
+    }
+    
+    .timeline-mark::before {
+        top: -35px;
+        height: 15px;
+    }
+    
+    .timeline-mark.major::before {
+        top: -40px;
+        height: 20px;
+        width: 4px;
+    }
 }
 
 /* Контролы таймлайна */
@@ -474,11 +573,13 @@ input[type="checkbox"] {
         width: 100%;
     }
     
-    /* Адаптивный canvas */
+    /* Исправленный canvas-контейнер без отдельной прокрутки */
     .canvas-container {
         width: 100%;
-        overflow-x: auto;
-        padding: 10px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* Убираем overflow-x: auto и padding */
     }
     
     #editCanvas {
@@ -632,10 +733,12 @@ input[type="checkbox"] {
         gap: 15px;
     }
     
+    /* Исправленный canvas для маленьких экранов */
     #editCanvas {
         max-width: 100%;
         width: calc(100vw - 40px);
         height: calc(100vw - 40px);
+        /* Убираем отдельные размеры, используем только aspect-ratio */
     }
     
     .timeline-header {
