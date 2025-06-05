@@ -844,7 +844,7 @@ class VideoEditor {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `antifon_video_${Date.now()}.webm`;
+        a.download = `Михаил_Круг_${Date.now()}.webm`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
